@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>豪士无边藜麦面包 - 制作互动H5</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: "PingFang SC", "Microsoft YaHei", sans-serif;
+        }
+
+        body {
+            background-color: #fff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            overflow: hidden;
+        }
+
+        /* iPhone 尺寸 + 纯配色背景，无外部图片 */
+        .game-container {
+            width: 100%;
+            max-width: 390px;
+            height: 100vh;
+            max-height: 844px;
+            background: linear-gradient(120deg, #fff3e0, #ffe8cc);
+            background-image: radial-gradient(#f8e8d6 1px, transparent 1px);
+            background-size: 20px 20px;
+            border-radius: 20px;
+            box-shadow: 0 10px 40px rgba(139, 69, 19, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .game-container::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(255, 248, 230, 0.6);
+            z-index: 0;
+        }
+
+        .screen {
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 25px 20px;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.4s ease;
+            z-index: 1;
+        }
+
+        .screen.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        #start-screen {
+            background-color: rgba(255, 230, 204, 0.9);
+        }
+
+        .logo-icon {
+            font-size: 90px;
+            margin-bottom: 20px;
+            filter: drop-shadow(0 4px 8px rgba(139, 69, 19, 0.2));
+            animation: float 3s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .title {
+            font-size: 28px;
+            font-weight: 700;
+            color: #6b3f21;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+
+        .subtitle {
+            font-size: 15px;
+            color: #8c6548;
+            margin-bottom: 40px;
+            text-align: center;
+            line-height: 1.6;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #ff8a3c, #ff6b20);
+            color: #fff;
+            border: none;
+            padding: 15px 40px;
+            border-radius: 50px;
+            font-size: 17px;
+            font-weight: 600;
+            cursor: pointer;
+            box-shadow: 0 5px 18px rgba(255, 107, 32, 0.35);
+            transition: all 0.25s ease;
+        }
+
+        .btn:active {
+            transform: translateY(2px);
+            box-shadow: 0 2px 8px rgba(255, 107, 32, 0.3);
+        }
+
+        .step-title {
+            font-size: 22px;
+            font-weight: 700;
+            color: #6b3f21;
+            margin-bottom: 8px;
+            text-align: center;
+        }
+
+        .step-desc {
+            font-size: 14px;
+            color: #8c6548;
+            margin-bottom: 15px;
+            text-align: center;
+            line-height: 1.6;
+        }
+
+        .game-area {
+            width: 100%;
+            height: 360px;
+            background-color: rgba(255, 249, 240, 0.9);
+            border-radius: 18px;
+            position: relative;
+            overflow: hidden;
+            margin-bottom: 15px;
+            border: 2px dashed #e6d2bc;
+            box-shadow: inset 0 2px 8px rgba(0,0,0,0.05);
+        }
+
+        .ingredient {
+            position: absolute;
+            cursor: grab;
+            transition: transform 0.2s ease;
+            user-select: none;
+            font-size: 42px;
+            z-index: 5;
+        }
+        .ingredient:active {
+            cursor: grabbing;
+            transform: scale(1.15);
+        }
+
+        .workbench {
+            position: absolute;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 300px;
+            height: 100px;
+            background: linear-gradient(#e8d5c4, #d9c2ab);
+            border-radius: 12px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            z-index: 2;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 10px;
+            background-color: #f0e6dc;
+            border-radius: 5px;
+            margin-bottom: 12px;
+            overflow: hidden;
+        }
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #ff8a3c, #ff6b20);
+            border-radius: 5px;
+            transition: width 0.6s ease;
+        }
+
+        .step-btn {
+            background-color: #6b3f21;
+            color: #fff;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 50px;
+            font-size: 15px;
+            cursor: pointer;
+            transition: all 0.25s ease;
+        }
+        .step-btn:disabled {
+            background-color: #c9b8a6;
+            cursor: not-allowed;
+            opacity: 0.8;
+        }
+        .step-btn:active:not(:disabled) {
+            transform: translateY(2px);
+        }
+
+        .oven {
+            width: 130px;
+            height: 105px;
+            background-color: #8b4513;
+            border-radius: 12px;
+            position: absolute;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            z-index: 2;
+        }
+        .oven-door {
+            width: 85px;
+            height: 65px;
+            background-color: #a0522d;
+            border-radius: 8px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 28px;
+        }
+        .oven-glow {
+            animation: bakeGlow 0.8s ease-in-out infinite;
+        }
+        @keyframes bakeGlow {
+            0%, 100% { box-shadow: 0 0 10px rgba(255, 150, 50, 0.5); }
+            50% { box-shadow: 0 0 25px rgba(255, 150, 50, 0.9); }
+        }
+
+        .packaging {
+            width: 110px;
+            height: 130px;
+            background: linear-gradient(#ffe066, #ffd133);
+            border-radius: 8px;
+            position: absolute;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border: 3px solid #fbc02d;
+            box-shadow: 0 4px 10px rgba(255, 192, 0, 0.2);
+            z-index: 2;
+        }
+        .packaging::after {
+            content: "豪士";
+            color: #6b3f21;
+            font-weight: bold;
+            font-size: 18px;
+        }
+
+        .hint {
+            position: absolute;
+            top: 15px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: rgba(107, 63, 33, 0.9);
+            color: #fff;
+            padding: 8px 20px;
+            border-radius: 30px;
+            font-size: 12px;
+            white-space: nowrap;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            z-index: 10;
+        }
+        .hint.show {
+            opacity: 1;
+        }
+
+        @keyframes knead {
+            0%, 100% { transform: translateX(-50%) scale(1); }
+            25% { transform: translateX(-50%) scale(1.05) rotate(5deg); }
+            50% { transform: translateX(-50%) scale(1.1) rotate(0deg); }
+            75% { transform: translateX(-50%) scale(1.05) rotate(-5deg); }
+        }
+        .kneading {
+            animation: knead 0.6s ease-in-out 3;
+        }
+
+        .bake-countdown {
+            position: absolute;
+            top: 45%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 32px;
+            font-weight: bold;
+            color: #ff5500;
+            text-shadow: 0 0 8px #fff;
+            z-index: 20;
+            display: none;
+        }
+
+        #complete-screen {
+            background-color: rgba(255, 230, 204, 0.9);
+        }
+        .final-bread {
+            font-size: 90px;
+            margin-bottom: 20px;
+            animation: float 3s ease-in-out infinite;
+        }
+        .complete-title {
+            font-size: 24px;
+            font-weight: 700;
+            color: #6b3f21;
+            margin-bottom: 12px;
+        }
+        .complete-text {
+            font-size: 14px;
+            color: #8c6548;
+            line-height: 1.7;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <div id="start-screen" class="screen active">
+            <div class="logo-icon">🍞</div>
+            <div class="title">豪士无边藜麦面包</div>
+            <div class="subtitle">沉浸式体验面包制作全过程<br>每一步都是匠心的体现</div>
+            <button class="btn" onclick="startGame()">开始制作</button>
+        </div>
+
+        <div id="step1-screen" class="screen">
+            <div class="step-title">第一步：甄选原料</div>
+            <div class="step-desc">精选优质小麦+营养藜麦，打造健康基底</div>
+            <div class="game-area" id="step1-area">
+                <div class="ingredient" id="wheat1" style="top: 40px; left: 40px;">🌾</div>
+                <div class="ingredient" id="wheat2" style="top: 70px; right: 40px;">🌾</div>
+                <div class="ingredient" id="quinoa1" style="top: 140px; left: 90px;">🌰</div>
+                <div class="ingredient" id="quinoa2" style="top: 170px; right: 90px;">🌰</div>
+                <div class="workbench" id="step1-workbench"></div>
+                <div class="hint" id="step1-hint">拖动所有原料到工作台混合</div>
+            </div>
+            <div class="progress-bar">
+                <div class="progress-fill" style="width: 25%;"></div>
+            </div>
+            <button class="step-btn" id="step1-btn" disabled onclick="nextStep(2)">下一步：揉制面团</button>
+        </div>
+
+        <div id="step2-screen" class="screen">
+            <div class="step-title">第二步：用心揉制</div>
+            <div class="step-desc">反复揉打，让藜麦与面团充分融合</div>
+            <div class="game-area" id="step2-area">
+                <div class="ingredient" id="dough" style="top: 110px; left: 50%; transform: translateX(-50%); display: none;">🟡</div>
+                <div class="hint" id="step2-hint">点击面团，开始揉制！</div>
+            </div>
+            <div class="progress-bar">
+                <div class="progress-fill" style="width: 50%;"></div>
+            </div>
+            <button class="step-btn" id="step2-btn" disabled onclick="nextStep(3)">下一步：精准烘烤</button>
+        </div>
+
+        <div id="step3-screen" class="screen">
+            <div class="step-title">第三步：黄金火候</div>
+            <div class="step-desc">恒温烘烤，耐心等待面包出炉</div>
+            <div class="game-area" id="step3-area">
+                <div class="ingredient" id="raw-bread" style="top: 90px; left: 50%; transform: translateX(-50%); display: none;">🍞</div>
+                <div class="oven" id="oven">
+                    <div class="oven-door">🔥</div>
+                </div>
+                <div class="bake-countdown" id="countdown">0</div>
+                <div class="hint" id="step3-hint">将生面包拖入烤箱烘烤</div>
+            </div>
+            <div class="progress-bar">
+                <div class="progress-fill" style="width: 75%;"></div>
+            </div>
+            <button class="step-btn" id="step3-btn" disabled onclick="nextStep(4)">下一步：锁鲜包装</button>
+        </div>
+
+        <div id="step4-screen" class="screen">
+            <div class="step-title">第四步：锁鲜守护</div>
+            <div class="step-desc">气调锁鲜，留住刚出炉的美味</div>
+            <div class="game-area" id="step4-area">
+                <div class="ingredient" id="baked-bread" style="top: 90px; left: 50%; transform: translateX(-50%); display: none;">🍞</div>
+                <div class="packaging"></div>
+                <div class="hint" id="step4-hint">把面包拖入包装完成制作</div>
+            </div>
+            <div class="progress-bar">
+                <div class="progress-fill" style="width: 100%;"></div>
+            </div>
+            <button class="step-btn" id="step4-btn" disabled onclick="showComplete()">完成制作</button>
+        </div>
+
+        <div id="complete-screen" class="screen">
+            <div class="final-bread">🍞</div>
+            <div class="complete-title">制作完成！</div>
+            <div class="complete-text">
+                恭喜你亲手制作了豪士无边藜麦面包！<br>
+                从原料到成品，每一步都是匠心的体现<br>
+                无边柔软，藜麦清香，一口沦陷
+            </div>
+            <button class="btn" onclick="restartGame()">再玩一次</button>
+        </div>
+    </div>
+
+    <script>
+        let currentStep = 1;
+        let step1Collected = 0;
+        let step2Done = false;
+        let step3Done = false;
+        let step4Done = false;
+        const BAKE_TIME = 5;
+
+        function dragItem(dragEl, dropEl, onSuccess) {
+            let gameBox = dragEl.closest(".game-area");
+            let isDragging = false;
+            let startX, startY;
+
+            dragEl.addEventListener("mousedown", startDrag);
+            dragEl.addEventListener("touchstart", startDrag);
+
+            function startDrag(e) {
+                e.preventDefault();
+                isDragging = true;
+                const pos = e.touches ? e.touches[0] : e;
+                startX = pos.clientX;
+                startY = pos.clientY;
+                dragEl.style.zIndex = "999";
+            }
+
+            document.addEventListener("mousemove", moveDrag);
+            document.addEventListener("touchmove", moveDrag);
+
+            function moveDrag(e) {
+                if (!isDragging) return;
+                const pos = e.touches ? e.touches[0] : e;
+                const rect = gameBox.getBoundingClientRect();
+                dragEl.style.left = (pos.clientX - rect.left - dragEl.offsetWidth/2) + "px";
+                dragEl.style.top = (pos.clientY - rect.top - dragEl.offsetHeight/2) + "px";
+            }
+
+            document.addEventListener("mouseup", endDrag);
+            document.addEventListener("touchend", endDrag);
+
+            function endDrag() {
+                if (!isDragging) return;
+                isDragging = false;
+                dragEl.style.zIndex = "";
+
+                const dRect = dragEl.getBoundingClientRect();
+                const tRect = dropEl.getBoundingClientRect();
+                const centerX = dRect.left + dRect.width/2;
+                const centerY = dRect.top + dRect.height/2;
+                const isOverlapping = centerX > tRect.left && centerX < tRect.right &&
+                                     centerY > tRect.top && centerY < tRect.bottom;
+
+                if (isOverlapping && onSuccess) {
+                    dragEl.style.display = "none";
+                    onSuccess();
+                }
+            }
+        }
+
+        function showHint(step) {
+            const hint = document.getElementById(`step${step}-hint`);
+            hint.classList.add("show");
+            setTimeout(() => hint.classList.remove("show"), 2500);
+        }
+
+        function startGame() {
+            document.getElementById("start-screen").classList.remove("active");
+            document.getElementById("step1-screen").classList.add("active");
+            showHint(1);
+
+            const workbench = document.getElementById("step1-workbench");
+            const ingredients = [
+                document.getElementById("wheat1"),
+                document.getElementById("wheat2"),
+                document.getElementById("quinoa1"),
+                document.getElementById("quinoa2")
+            ];
+
+            ingredients.forEach(item => {
+                dragItem(item, workbench, () => {
+                    step1Collected++;
+                    if (step1Collected >= 4) {
+                        document.getElementById("dough").style.display = "block";
+                        document.getElementById("step1-btn").disabled = false;
+                    }
+                });
+            });
+        }
+
+        function nextStep(step) {
+            document.getElementById(`step${currentStep}-screen`).classList.remove("active");
+            document.getElementById(`step${step}-screen`).classList.add("active");
+            currentStep = step;
+
+            if (step === 2) initStep2();
+            if (step === 3) initStep3();
+            if (step === 4) initStep4();
+        }
+
+        function initStep2() {
+            showHint(2);
+            const dough = document.getElementById("dough");
+            dough.style.display = "block";
+
+            dough.onclick = function() {
+                if (step2Done) return;
+                step2Done = true;
+                dough.classList.add("kneading");
+                setTimeout(() => {
+                    dough.classList.remove("kneading");
+                    document.getElementById("step2-btn").disabled = false;
+                    document.getElementById("raw-bread").style.display = "block";
+                }, 1800);
+            };
+        }
+
+        function initStep3() {
+            showHint(3);
+            const bread = document.getElementById("raw-bread");
+            const oven = document.getElementById("oven");
+            const countDom = document.getElementById("countdown");
+            bread.style.display = "block";
+
+            dragItem(bread, oven, () => {
+                oven.classList.add("oven-glow");
+                countDom.style.display = "block";
+                let time = BAKE_TIME;
+                countDom.innerText = time;
+
+                const timer = setInterval(() => {
+                    time--;
+                    countDom.innerText = time;
+                    if (time <= 0) {
+                        clearInterval(timer);
+                        oven.classList.remove("oven-glow");
+                        countDom.style.display = "none";
+                        step3Done = true;
+                        document.getElementById("step3-btn").disabled = false;
+                        document.getElementById("baked-bread").style.display = "block";
+                    }
+                }, 1000);
+            });
+        }
+
+        function initStep4() {
+            showHint(4);
+            const bread = document.getElementById("baked-bread");
+            const pack = document.querySelector("#step4-area .packaging");
+            bread.style.display = "block";
+
+            dragItem(bread, pack, () => {
+                step4Done = true;
+                setTimeout(() => {
+                    document.getElementById("step4-btn").disabled = false;
+                }, 500);
+            });
+        }
+
+        function showComplete() {
+            document.getElementById("step4-screen").classList.remove("active");
+            document.getElementById("complete-screen").classList.add("active");
+        }
+
+        function restartGame() {
+            currentStep = 1;
+            step1Collected = 0;
+            step2Done = false;
+            step3Done = false;
+            step4Done = false;
+
+            document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
+            document.getElementById("start-screen").classList.add("active");
+
+            const items = [
+                document.getElementById("wheat1"),
+                document.getElementById("wheat2"),
+                document.getElementById("quinoa1"),
+                document.getElementById("quinoa2")
+            ];
+            items[0].style = "top: 40px; left: 40px; display: block;";
+            items[1].style = "top: 70px; right: 40px; display: block;";
+            items[2].style = "top: 140px; left: 90px; display: block;";
+            items[3].style = "top: 170px; right: 90px; display: block;";
+
+            document.getElementById("dough").style.display = "none";
+            document.getElementById("raw-bread").style.display = "none";
+            document.getElementById("baked-bread").style.display = "none";
+            document.getElementById("countdown").style.display = "none";
+            document.getElementById("oven").classList.remove("oven-glow");
+
+            document.getElementById("step1-btn").disabled = true;
+            document.getElementById("step2-btn").disabled = true;
+            document.getElementById("step3-btn").disabled = true;
+            document.getElementById("step4-btn").disabled = true;
+        }
+    </script>
+</body>
+</html>
